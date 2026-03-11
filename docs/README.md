@@ -63,37 +63,40 @@ Below is a Mermaid sequence diagram illustrating the data flow between the three
 ```mermaid
 sequenceDiagram
     participant User
-    participant MainProgram
-    participant Operations
-    participant DataProgram
+    participant Main as MainProgram
+    participant Ops as Operations
+    participant Data as DataProgram
 
-    User->>MainProgram: choose action (1-4)
-    MainProgram->>Operations: CALL with operation type
-    alt view balance
-        Operations->>DataProgram: CALL 'READ'
-        DataProgram-->>Operations: return balance
-        Operations-->>User: display balance
-    else credit account
-        Operations-->>User: prompt amount
-        User-->>Operations: enter amount
-        Operations->>DataProgram: CALL 'READ'
-        DataProgram-->>Operations: return balance
-        Operations: add amount to balance
-        Operations->>DataProgram: CALL 'WRITE'
-        DataProgram-->>Operations: ack
-        Operations-->>User: display new balance
-    else debit account
-        Operations-->>User: prompt amount
-        User-->>Operations: enter amount
-        Operations->>DataProgram: CALL 'READ'
-        DataProgram-->>Operations: return balance
-        alt sufficient funds
-            Operations: subtract amount
-            Operations->>DataProgram: CALL 'WRITE'
-            DataProgram-->>Operations: ack
-            Operations-->>User: display new balance
-        else insufficient
-            Operations-->>User: display error
+    User->>Main: select menu choice (1-4)
+    Main->>Ops: CALL Operations 'TOTAL'/'CREDIT'/'DEBIT'
+    
+    alt TOTAL (View Balance)
+        Ops->>Data: CALL 'READ'
+        Data-->>Ops: STORAGE-BALANCE
+        Ops-->>User: display balance
+    else CREDIT
+        Ops-->>User: prompt credit amount
+        User-->>Ops: enter amount
+        Ops->>Data: CALL 'READ'
+        Data-->>Ops: STORAGE-BALANCE
+        Note over Ops: add amount to balance
+        Ops->>Data: CALL 'WRITE' (new balance)
+        Data-->>Ops: update complete
+        Ops-->>User: display new balance
+    else DEBIT
+        Ops-->>User: prompt debit amount
+        User-->>Ops: enter amount
+        Ops->>Data: CALL 'READ'
+        Data-->>Ops: STORAGE-BALANCE
+        alt balance >= amount
+            Note over Ops: subtract amount
+            Ops->>Data: CALL 'WRITE' (new balance)
+            Data-->>Ops: update complete
+            Ops-->>User: display new balance
+        else insufficient funds
+            Ops-->>User: display error message
         end
     end
+    
+    User->>Main: choose option or exit
 ```
